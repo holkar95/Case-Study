@@ -1,0 +1,82 @@
+<workflow-app xmlns="uri:oozie:workflow:0.2" name="cdw_sapp">
+    <start to="sqoop-node"/>    
+    <action name="sqoop-node">    <!--node name--> 
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>  <!--job tracking node is http://sandbox.hortonworks.com:8050 which is define in job properties--> 
+            <name-node>${nameNode}</name-node> <!--name node is http://sandbox.hortonworks.com:8020 which is define in job properties--> 
+              <prepare>
+               <delete path="${nameNode}/user/maria_dev/Credit_Card_System"/>   <!--if oldmovies directory is present in hadoop then this line will delet oldmovies directory because when oldmovies.sql file will create this create directry again for new dataset   --> 
+            </prepare>
+            <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>job  --meta-connect jdbc:hsqldb:hsql://localhost:16000/sqoop --exec sqooptimeid</command>
+          </sqoop>
+        <ok to="sqoop-node2"/>
+         <error to = "kill_job" />
+    </action>
+
+     <action name="sqoop-node2">    <!--node name--> 
+        <sqoop xmlns="uri:oozie:sqoop-action:0.2">
+            <job-tracker>${jobTracker}</job-tracker>  <!--job tracking node is http://sandbox.hortonworks.com:8050 which is define in job properties--> 
+            <name-node>${nameNode}</name-node> <!--name node is http://sandbox.hortonworks.com:8020 which is define in job properties--> 
+              <configuration>
+                <property>
+                    <name>mapred.job.queue.name</name>
+                    <value>${queueName}</value>
+                </property>
+            </configuration>
+            <command>job  --meta-connect jdbc:hsqldb:hsql://localhost:16000/sqoop --exec Sqoopalltbl</command>
+          </sqoop>
+        <ok to="Do_Initial_load_in_HIVE"/>
+         <error to =  "kill_job" />
+    </action>
+ 
+    
+   <action name = "Do_Initial_load_in_HIVE">
+      <hive xmlns = "uri:oozie:hive-action:0.4">
+        <job-tracker>${jobTracker}</job-tracker>
+         <name-node>${nameNode}</name-node>
+
+         <script>${nameNode}/user/maria_dev/Case_Study_Workflowfiles/Initialload.hive</script>
+      </hive>
+	      <ok to = "Transform_data" />
+      <error to = "kill_job" />
+   </action>
+   
+
+   <action name = "Transform_data">
+      <hive xmlns = "uri:oozie:hive-action:0.4">
+         <job-tracker>${jobTracker}</job-tracker>
+         <name-node>${nameNode}</name-node>
+
+         <script>${nameNode}/user/maria_dev/Case_Study_Workflowfiles/Transformation.hive</script>
+        
+      </hive>
+      <ok to = "Partition_data" />
+      <error to = "kill_job" />
+	</action>
+
+
+    <action name = "Partition_data">
+      <hive xmlns = "uri:oozie:hive-action:0.4">
+         <job-tracker>${jobTracker}</job-tracker>
+         <name-node>${nameNode}</name-node>
+
+         <script>${nameNode}/user/maria_dev/Case_Study_Workflowfiles/partition.hive</script>
+        
+      </hive>
+
+      <ok to = "end" />
+      <error to = "kill_job" />
+   </action>
+   
+   <kill name = "kill_job">
+      <message>Job failed</message>
+   </kill>
+	
+   <end name = "end" />
+</workflow-app>

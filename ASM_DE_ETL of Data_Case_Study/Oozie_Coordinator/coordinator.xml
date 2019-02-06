@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<coordinator-app timezone="America/New_York" end="2019-01-18T13:30Z" start="2019-01-18T12:30Z" frequency="15" name="Data_Optimization" xmlns="uri:oozie:coordinator:0.2">
+
+
+<controls>
+
+<timeout>1</timeout>
+
+<concurrency>1</concurrency>
+
+<execution>FIFO</execution>
+
+<throttle>1</throttle>
+
+</controls>
+
+
+<action>
+
+
+<workflow>
+
+<app-path>${nameNode}/user/maria_dev/Case_Study_WorkflowOptmz/workflow1.xml</app-path>
+
+</workflow>
+
+</action>
+
+</coordinator-app>
